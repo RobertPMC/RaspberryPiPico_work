@@ -54,7 +54,6 @@ class Snake:
         with open("best_score_for_snake.txt", "r") as f:
             self.best_score = int(f.read())
 
-
     def game_over(self):
         # checking to see if there is a new high score
         if self.score > self.best_score:
@@ -111,7 +110,6 @@ class Snake:
 
         old_direction = self.direction
 
-
         # run the game until the timer runs out or you died
         while self.time > 0:
 
@@ -142,11 +140,9 @@ class Snake:
             if off_d_button_value == d_button.value():
                 d_button_pressed = False
 
-
             # direction
             if self.direction != old_direction:
                 old_direction = self.direction
-
 
             # calculating the next position of the snake's coords
             self.x = self.snake_tail[-1][0]
@@ -159,14 +155,12 @@ class Snake:
             else:
                 self.x += self.direction_dict[self.direction][0]
 
-
             if self.y+self.direction_dict[self.direction][1] < 0:
                 self.y = self.mx_width-1
             elif self.y+self.direction_dict[self.direction][1] > self.mx_width-1:
                 self.y = 0
             else:
                 self.y += self.direction_dict[self.direction][1]
-            
 
             # "moving" the snake
             mx[convert_index(coords_to_linear(self.snake_tail[-1]))] = self.snake_color 
@@ -174,18 +168,14 @@ class Snake:
 
             self.snake_tail.pop(0)
 
-
             # checking to see if the snake touched itself
             if (self.x, self.y) not in self.snake_tail:
                 self.snake_tail.append((self.x, self.y))
             
             else:
                 mx.write()
-
                 sleep(2)
-
                 self.game_over()
-
 
             # spawning the apple
             if randint(self.apple_spawn_chances[0], self.apple_spawn_chances[1]) == 1:
@@ -200,11 +190,9 @@ class Snake:
 
                 mx[coords_to_linear(self.apple_coords)] = self.apple_color
 
-
             # increasing the game speed if the snake tail is longer that 25 pixels
             if self.snake_lenght > 25:
                 self.delay = .1
-
 
             # checking to see if the snake ate an apple
             if self.snake_tail[-1] in self.apples:
@@ -228,10 +216,8 @@ class Snake:
             for coords in self.snake_tail:
                 mx[convert_index(coords_to_linear(coords))] = self.snake_color
 
-
             # rendering the matrix
             mx.write()
-
 
             # post-rendering the matrix
             sleep(self.delay)
