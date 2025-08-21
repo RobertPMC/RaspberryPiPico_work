@@ -16,11 +16,23 @@ mx = NeoPixel(Pin(0), 256)
 
 
 # W, A, S, D buttons
-
 w_button = Pin(9, Pin.IN, Pin.PULL_UP)
 a_button = Pin(8, Pin.IN, Pin.PULL_UP)
 s_button = Pin(7, Pin.IN, Pin.PULL_UP)
 d_button = Pin(6, Pin.IN, Pin.PULL_UP)
+
+# last state of the buttons
+off_w_button_value = w_button.value()
+w_button_pressed = False
+
+off_a_button_value = w_button.value()
+a_button_pressed = False
+
+off_s_button_value = w_button.value()
+s_button_pressed = False
+
+off_d_button_value = w_button.value()
+d_button_pressed = False
 
 
 class Snake:
@@ -53,6 +65,54 @@ class Snake:
         # all time hight score
         with open("best_score_for_snake.txt", "r") as f:
             self.best_score = int(f.read())
+
+    def check_the_buttons(self):
+        global off_a_button_value, off_d_button_value, off_s_button_value, off_w_button_value
+        global a_button_pressed, d_button_pressed, s_button_pressed, w_button_pressed
+
+        # W button
+        if off_w_button_value != w_button.value() and w_button_pressed is False:
+            w_button_pressed = True
+            self.direction = "forward" if self.direction != "backward" else self.direction
+        if off_w_button_value == w_button.value():
+            w_button_pressed = False
+        # A button
+        if off_a_button_value != a_button.value() and a_button_pressed is False:
+            a_button_pressed = True
+            self.direction = "right" if self.direction != "left" else self.direction
+        if off_a_button_value == a_button.value():
+            a_button_pressed = False
+
+        # S button
+        if off_s_button_value != s_button.value() and s_button_pressed is False:
+            s_button_pressed = True
+            self.direction = "backward" if self.direction != "forward" else self.direction
+        if off_s_button_value == s_button.value():
+            s_button_pressed = False
+
+        # D button
+        if off_d_button_value != d_button.value() and d_button_pressed is False:
+            d_button_pressed = True
+            self.direction = "left" if self.direction != "right" else self.direction
+        if off_d_button_value == d_button.value():
+            d_button_pressed = False
+
+    def spawn_an_apple(self, coords):
+        mx[coords_to_linear(coords)] = self.apple_color
+
+    def grow(self):
+        self.x = self.snake_tail[0][0]
+        self.y = self.snake_tail[0][1]
+
+        if self.x-self.direction_dict[self.direction][0] < 0:
+            self.x = self.mx_height-1
+        elif self.x-self.direction_dict[self.direction][0] > self.mx_height-1:
+            self.x = 0
+        else:
+            self.x -= self.direction_dict[self.direction][0]
+
+        self.snake_tail.insert(0, (self.x, self.y))
+        self.snake_lenght = len(self.snake_tail)
 
     def game_over(self):
         # checking to see if there is a new high score
@@ -93,53 +153,16 @@ class Snake:
         # end the programm
         exit()
 
-    # run the game
     def run(self):
-
-        off_w_button_value = w_button.value()
-        w_button_pressed = False
-
-        off_a_button_value = w_button.value()
-        a_button_pressed = False
-
-        off_s_button_value = w_button.value()
-        s_button_pressed = False
-
-        off_d_button_value = w_button.value()
-        d_button_pressed = False
 
         old_direction = self.direction
 
         # run the game until the timer runs out or you died
         while self.time > 0:
 
-            # W button
-            if off_w_button_value != w_button.value() and w_button_pressed is False:
-                w_button_pressed = True
-                self.direction = "forward" if self.direction != "backward" else self.direction
-            if off_w_button_value == w_button.value():
-                w_button_pressed = False
-            # A button
-            if off_a_button_value != a_button.value() and a_button_pressed is False:
-                a_button_pressed = True
-                self.direction = "right" if self.direction != "left" else self.direction
-            if off_a_button_value == a_button.value():
-                a_button_pressed = False
-
-            # S button
-            if off_s_button_value != s_button.value() and s_button_pressed is False:
-                s_button_pressed = True
-                self.direction = "backward" if self.direction != "forward" else self.direction
-            if off_s_button_value == s_button.value():
-                s_button_pressed = False
-
-            # D button
-            if off_d_button_value != d_button.value() and d_button_pressed is False:
-                d_button_pressed = True
-                self.direction = "left" if self.direction != "right" else self.direction
-            if off_d_button_value == d_button.value():
-                d_button_pressed = False
-
+            # check if the button's state has changed
+            self.check_the_buttons()
+            
             # direction
             if self.direction != old_direction:
                 old_direction = self.direction
@@ -166,7 +189,7 @@ class Snake:
             mx[convert_index(coords_to_linear(self.snake_tail[-1]))] = self.snake_color 
             mx[convert_index(coords_to_linear(self.snake_tail[0]))] = (0, 0, 0)
 
-            self.snake_tail.pop(0)
+            self.snake_tail.pop(0) # remove the last pixel of the snake's tail
 
             # checking to see if the snake touched itself
             if (self.x, self.y) not in self.snake_tail:
@@ -181,16 +204,14 @@ class Snake:
             if randint(self.apple_spawn_chances[0], self.apple_spawn_chances[1]) == 1:
                 self.apple_coords = randint(0, mx.n-1)
 
-                if self.apple_coords in self.apples:
-                    while self.apple_coords in self.apples:
-                        self.apple_coords = randint(0, mx.n)
+                while (self.apple_coords in self.apples) or (self.apple_coords in self.snake_tail):
+                    self.apple_coords = randint(0, mx.n)
 
                 self.apple_coords = linear_to_coords(self.apple_coords)
                 self.apples.append(self.apple_coords)
+                self.spawn_an_apple(self.apple_coords)
 
-                mx[coords_to_linear(self.apple_coords)] = self.apple_color
-
-            # increasing the game speed if the snake tail is longer that 25 pixels
+            # increasing the game speed if the snake tail is longer that 25 pixels to make it harder
             if self.snake_lenght > 25:
                 self.delay = .1
 
@@ -199,18 +220,7 @@ class Snake:
                 self.score += 1
                 self.apples.remove(self.snake_tail[-1])
 
-                self.x = self.snake_tail[0][0]
-                self.y = self.snake_tail[0][1]
-
-                if self.x-self.direction_dict[self.direction][0] < 0:
-                    self.x = self.mx_height-1
-                elif self.x-self.direction_dict[self.direction][0] > self.mx_height-1:
-                    self.x = 0
-                else:
-                    self.x -= self.direction_dict[self.direction][0]
-
-                self.snake_tail.insert(0, (self.x, self.y))
-                self.snake_lenght = len(self.snake_tail)
+                self.grow()
 
             # rendering the snake
             for coords in self.snake_tail:
